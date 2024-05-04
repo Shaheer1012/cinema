@@ -19,20 +19,20 @@ class User
         void setName(string name){this->name = name;}
         void setPin(int pin){this->pin = pin;}
 };
-class Movie{
+class Movies{
 	private:
-		int rating;
-		string m_name;
+		string m_name,genre;
+        
 	public:
-		Movie(string m,int r)
+		Movies(string m,int r,string g)
 		{
 			m_name=m;
-			rating=r;
+            genre=g;
 		}
 		string getname(){return m_name;}
-		int getrating(){return rating;}
+        string getgenre(){return genre;}
 		void setname(string m2){m_name=m2;}
-		void setname(int r2){rating=r2;}	
+        void setgenre(string g2){genre=g2;}	
 };
 
 void signup(vector<User>&users)
