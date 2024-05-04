@@ -2,7 +2,7 @@
 #include <fstream>
 #include <vector>
 #include <sstream>
-using namespace  std;
+using namespace std;
 class User
 {
     private:
@@ -34,6 +34,7 @@ class Movie{
 		void setname(string m2){m_name=m2;}
 		void setname(int r2){rating=r2;}	
 };
+
 void signup(vector<User>&users)
 {
     fstream file ("users.txt",ios::app);
@@ -132,6 +133,22 @@ vector<Movie> ReadmovieFromFile()
     }
     file.close();
     return movies;
+}
+void WriteMoviesToFile(vector<Movie>&movies)
+{
+    fstream file("Movies.txt",ios::in);
+    string name;
+    int rating;
+    string genre;
+    cout<<"Enter movie name and release date: /n";
+    cin.ignore();
+    getline(cin,name);
+    cout<<"Movie Genre: ";
+    getline(cin,genre);
+    cout<<"Movie Rating: ";
+    cin>>rating;
+    file<<name<<genre<<rating;
+    file.close();
 }
 int main()
 {
