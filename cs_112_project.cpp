@@ -22,7 +22,8 @@ class User
 class Movies{
 	private:
 		string m_name,genre;
-        
+        vector<int> ratings;
+        double sum=0.0;
 	public:
 		Movies(string m,int r,string g)
 		{
@@ -32,9 +33,28 @@ class Movies{
 		string getname(){return m_name;}
         string getgenre(){return genre;}
 		void setname(string m2){m_name=m2;}
-        void setgenre(string g2){genre=g2;}	
+        void setgenre(string g2){genre=g2;}
+        void addrating(int rating)
+        {
+            if(rating >=1 && rating <=4)
+            {
+                ratings.push_back(rating);
+                cout<<"Thanks for your precious remarks\n";
+            }
+            else
+            {
+                cout<<"Invalid rating, rate between 1-4\n";
+            }
+        }
+         double getAverageRating() const {
+        if (ratings.empty()) return 0.0;
+        double sum = 0.0;
+        for (int rating : ratings) {
+            sum += rating;
+        }
+        return sum / ratings.size();
+    }
 };
-
 void signup(vector<User>&users)
 {
     fstream file ("users.txt",ios::app);
