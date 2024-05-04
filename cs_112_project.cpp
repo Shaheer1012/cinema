@@ -10,7 +10,7 @@ class User
         int pin;
         string prefferedgenre;
     public: 
-        User(string name, int pin,string prefferedgenre)
+        User(string name, int pin,string prefferedgenre = "")
         {
             this->name = name;
             this->pin = pin;
@@ -27,9 +27,8 @@ class Movie{
 	private:
 		string m_name,genre;
         vector<int>ratings;
-        
 	public:
-		Movie(string m,int r,string g)
+		Movie(string m = "",int r = 0,string g = "")
 		{
 			m_name=m;
             genre=g;
@@ -56,12 +55,14 @@ class Movie{
         {
             if (ratings.empty()) return 0.0;
             double sum = 0.0;
-            for (int rating : ratings)
+            for (int i=0;i<ratings.size();i++)
             {
                 sum += rating;
             }
             return sum / ratings.size();
-    }
+        }
+        private: 
+            int rating=getAverageRating();
 };
 void signup(vector<User>&users)
 {
@@ -109,8 +110,8 @@ int login(vector<User>&users)
     string name;
     int userno;
     int pin;
-    int userno;
     bool userfound=false;
+    bool pinmatches=false;
     cout<<"Enter your name: ";
     cin.ignore();
     getline(cin,name);  
@@ -118,26 +119,31 @@ int login(vector<User>&users)
     {
         if(users[i].getName()==name)
         {
+            userfound=true;
+            userno=i;
             cout<<"Enter your pin: ";
             cin>>pin;
             if(users[i].getPin()==pin)
             {
-                cout<<"Welcome "<<name<<endl;
-                userfound=true;
-                userno=i;
-                return userno;
-            }
-            else
-            {
-                cout<<"Wrong pin"<<endl;
+                pinmatches=true;
             }
         }
     }  
-    if(!userfound)
+    if(userfound && pinmatches)
+    {
+        cout<<"Welcome "<<name<<endl;
+        return userno;
+    }
+    else if(userfound && !pinmatches)
+    {
+        cout<<"Wrong pin"<<endl;
+        return 0;
+    }
+    else
     {
         cout<<"User not found"<<endl;
+        return 0;
     }
-    return ;
 }
 vector<User>ReadUsersFromFile()
 {
@@ -161,25 +167,23 @@ vector<Movie> ReadmMoviesFromFile()
 {
     vector<Movie> movies;
     stringstream ss;
-    fstream file("Movies.txt",ios::app);
+    fstream file("Movies.txt");
     string line;
     string t_name;
     int t_pin;
     while(getline(file, line))
     {
         ss<<line;
-        if(ss>>t_name>>t_pin)
-        {
-            movies.emplace_back(t_name, t_pin);
-            ss.clear();
-        }
+        ss>>t_name>>t_pin;
+        movies.emplace_back(t_name, t_pin);
+        ss.clear();
     }
     file.close();
     return movies;
 }
 void WriteMoviesToFile(vector<Movie>&movies)
 {
-    fstream file("Movies.txt",ios::in);
+    fstream file("Movies.txt",ios::out);
     string name;
     int rating;
     string genre;
@@ -190,7 +194,7 @@ void WriteMoviesToFile(vector<Movie>&movies)
     getline(cin,genre);
     cout<<"Movie Rating: ";
     cin>>rating;
-    file<<name<<" "<<genre<<" "<<rating;
+    file<<name<<" "<<genre<<" "<<rating<<endl;
     file.close();
 }
 void MovieRecommend(vector<Movie>& movies,vector<User>&users,int &userno) 
@@ -198,7 +202,7 @@ void MovieRecommend(vector<Movie>& movies,vector<User>&users,int &userno)
     string genre;
     bool foundRecommendations = false;
     genre=users[userno].getPrefferedgenre();
-    for (int i=0;i,movies.size();i++) 
+    for (int i=0;i<movies.size();i++) 
     {
         if (movies[i].getGenre() == genre) 
         {
@@ -214,4 +218,8 @@ void MovieRecommend(vector<Movie>& movies,vector<User>&users,int &userno)
 int main()
 {
     vector<Movie> movies = ReadmMoviesFromFile();
+    for (int i=0;i<movies.size();i++)
+    {
+        cout<<movies[i].getName()<<endl;
+    }
 }
