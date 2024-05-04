@@ -19,12 +19,12 @@ class User
         void setName(string name){this->name = name;}
         void setPin(int pin){this->pin = pin;}
 };
-class Movies{
+class Movie{
 	private:
 		int rating;
 		string m_name;
 	public:
-		Movies(string m,int r)
+		Movie(string m,int r)
 		{
 			m_name=m;
 			rating=r;
@@ -34,7 +34,6 @@ class Movies{
 		void setname(string m2){m_name=m2;}
 		void setname(int r2){rating=r2;}	
 };
-
 void signup(vector<User>&users)
 {
     fstream file ("users.txt",ios::app);
@@ -114,9 +113,9 @@ vector<User>ReadUsersFromFile()
     file.close();
     return users;
 }
-vector<User> ReadmovieFromFile()
+vector<Movie> ReadmovieFromFile()
 {
-    vector<User> users;
+    vector<Movie> movies;
     stringstream ss;
     fstream file("Movies.txt",ios::app);
     string line;
@@ -127,12 +126,12 @@ vector<User> ReadmovieFromFile()
         ss<<line;
         if(ss>>t_name>>t_pin)
         {
-            users.emplace_back(t_name, t_pin);
+            movies.emplace_back(t_name, t_pin);
             ss.clear();
         }
     }
     file.close();
-    return users;
+    return movies;
 }
 int main()
 {
