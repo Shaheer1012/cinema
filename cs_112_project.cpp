@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <vector>
 #include <sstream>
@@ -22,48 +23,158 @@ class User
         void setPrefferedgenre(string prefferedgenre){this->prefferedgenre = prefferedgenre;}
         void setName(string name){this->name = name;}
         void setPin(int pin){this->pin = pin;}
+        friend ostream &operator <<(ostream &out,User &obj)
+        {
+            out<<"Username: "<<obj.name<<endl<<"Pin: "<<obj.pin<<endl<<"Preffered Genre: "<<obj.prefferedgenre<<endl;
+        }
 };
-class Movie{
+class Movie
+{
 	private:
 		string m_name,genre;
-        vector<int>ratings;
+        double ratings;
+        vector<string> comments;
 	public:
-		Movie(string m = "",int r = 0,string g = "")
+        int counter=1;
+		Movie(string m = "",double r = 0,string g = "")
 		{
 			m_name=m;
+            ratings=r;
             genre=g;
+
 		}
-        int getRating(int i){return ratings[i];}
+        double getRating(){return ratings;}
 		string getName(){return m_name;}
         string getGenre(){return genre;}
-        void setRating(int r,int i){ratings[i]=r;}
+        void setRating(double r){ratings=r;}
 		void setName(string m2){m_name=m2;}
         void setGenre(string g2){genre=g2;}	
-        void addrating(int rating)
+        int moviecounter(){counter++;return counter;}
+        friend istream &operator>>(istream &in, Movie &obj)
         {
-            if(rating >=1 && rating <=4)
-            {
-                ratings.push_back(rating);
-                cout<<"Thanks for your precious remarks\n";
-            }
-            else
-            {
-                cout<<"Invalid rating, rate between 1-4\n";
-            }
+            in>>obj.m_name>>obj.ratings>>obj.genre;
+            return in;
         }
-        double getAverageRating()
+        friend ostream &operator <<(ostream &out,Movie&obj)
         {
-            if (ratings.empty()) return 0.0;
-            double sum = 0.0;
-            for (int i=0;i<ratings.size();i++)
-            {
-                sum += rating;
-            }
-            return sum / ratings.size();
+            out<<"Name: "<<obj.m_name<<endl<<"Genre: "<<obj.genre<<endl<<"Ratings: "<<setprecision(3)<<obj.ratings<<endl;
+            return out;
         }
-        private: 
-            int rating=getAverageRating();
 };
+string Spaceremover(string str)
+{
+    for(int i=0;i<str.size();i++)
+    {
+        if (str[i]==' ')
+        {
+            str[i]='_';
+        }
+    }
+    return str;
+}
+string Spacer(string str)
+{
+    for(int i=0;i<str.size();i++)
+    {
+        if(str[i] == '_')
+        {
+            str[i]=' ';
+        }
+    }
+    return str;
+}
+void WriteCommentsToFile(vector<vector<string>>& comments) 
+{
+    ofstream file("comments.txt");
+    for (size_t i = 0; i < comments.size(); ++i) 
+    {
+        for (size_t j = 0; j < comments[i].size(); j++) 
+        {
+            file << Spaceremover(comments[i][j]) << " "; 
+        }
+        file<<endl;
+    }
+    file.close();
+}
+vector<vector<string>> ReadCommentsFromFile() 
+{
+    vector<vector<string>> comments;
+    ifstream file("comments.txt");
+    string line;
+    while (getline(file, line)) 
+    {
+        stringstream ss(line);
+        vector<string> movieComments;
+        string comment;
+        while (getline(ss, comment,' ')) 
+        {
+            movieComments.push_back(comment); 
+        }
+        comments.push_back(movieComments);
+    }
+    file.close();
+    return comments;
+}
+void addComment(vector<vector<string>>& comments, int movieno, vector<User>& users,int userno) 
+{
+    string comment;
+    cout << "Enter your comment: ";
+    getline(cin >>ws,comment);
+    comment=users[userno].getName() + ": " + comment;
+    comment = Spaceremover(comment);
+    comments[movieno-1].push_back(comment);
+    WriteCommentsToFile(comments); 
+}
+void displayComments(vector<vector<string>>& comments, vector<Movie>& movies, int movieno) 
+{
+    cout << movies[movieno-1] << endl;
+    for (int i = 0; i < comments[movieno-1].size(); i++) 
+    { 
+        cout<< "- " << Spacer(comments[movieno-1][i]) << endl; 
+    }
+}
+void DisplayMovies(int movieno,vector<Movie>&movies)
+{
+    cout<<"======================================="<<endl;
+    cout<<movies[movieno-1];
+}
+void DisplayUsers(int userno,vector<User>&users)
+{
+    cout<<"======================================="<<endl;
+    cout<<users[userno-1];
+}
+void WriteMoviesToFile(vector<Movie>& movies) 
+{
+    ofstream file("Movies.txt");
+    for (int i = 0; i < movies.size(); i++) 
+    {
+        file << movies[i].getName() << " " << movies[i].getGenre() << " " << movies[i].getRating() << endl;
+    }
+    file.close();
+}
+void WriteUsersToFile(vector<User>& users) 
+{
+    ofstream file("user.txt");
+    for (int i = 0; i < users.size(); i++) 
+    {
+        file << users[i].getName() << " " << users[i].getPin() << " " << users[i].getPrefferedgenre() << endl;
+    }
+    file.close();
+}
+void AddRating(int i,vector<Movie>&movies,double rat)
+{
+    if(rat>4)
+    {
+        cout<<"Invalid rating, enter number b/w (1-4)"<<endl;
+        return;
+    }
+    else
+    {
+    double currate=(movies[i-1].getRating()+rat)/movies[i-1].moviecounter(); 
+    movies[i-1].setRating(currate);
+    WriteMoviesToFile(movies);
+    }
+}
 void signup(vector<User>&users)
 {
     fstream file ("users.txt",ios::app);
@@ -71,13 +182,16 @@ void signup(vector<User>&users)
     string name;
     int pin;
     string genre;
-    cout<<"Enter your genre: ";
-    cin>>genre;
+    bool userfound=false;
     cout<<"Enter your name: ";
-    cin.ignore();
     getline(cin,name);
-    cout<<"Enter your pin: (4 digits)";
+    name=Spaceremover(name);
+    cout<<"Enter your pin: (4 digits): ";
     cin>>pin;
+    cout<<"Enter your preffered genre: ";
+    cin.ignore();
+    getline(cin,genre);
+    genre=Spaceremover(genre); 
     if(pin>9999||pin<1000)
     {
         cout<<"Invalid pin, try again";
@@ -88,12 +202,14 @@ void signup(vector<User>&users)
         if(users[i].getName()==name)
         {
             cout<<"User already in use,choose another username";
+            userfound=true;
             return;
         }
-        else
-        {
-            users.emplace_back(name,pin,genre);
-        }
+    }
+    if(!userfound)
+    {
+        users.emplace_back(name,pin,genre);
+        WriteUsersToFile(users);
     }
 }
 void changePrefferedgenre(vector<User>&users,int &userno)
@@ -102,6 +218,7 @@ void changePrefferedgenre(vector<User>&users,int &userno)
     cout<<"Enter the genre you prefer to watch"<<endl;
     getline(cin,genre);
     users[userno].setPrefferedgenre(genre);
+
 }
 int login(vector<User>&users)
 {
@@ -113,7 +230,6 @@ int login(vector<User>&users)
     bool userfound=false;
     bool pinmatches=false;
     cout<<"Enter your name: ";
-    cin.ignore();
     getline(cin,name);  
     for(int i=0;i<users.size();i++)
     {
@@ -149,6 +265,7 @@ vector<User>ReadUsersFromFile()
 {
     vector<User> users;
     stringstream ss;
+    string prefferedgenre;
     fstream file("user.txt",ios::in);
     string line;
     string t_name;
@@ -156,48 +273,37 @@ vector<User>ReadUsersFromFile()
     while(getline(file, line))
     {
         ss<<line;
-        ss>>t_name>>t_pin;
-        users.emplace_back(t_name, t_pin);
+        ss>>t_name>>t_pin>>prefferedgenre;
+        t_name=Spacer(t_name);
+        prefferedgenre=Spacer(prefferedgenre);
+        users.emplace_back(t_name, t_pin,prefferedgenre);
         ss.clear();
     }
     file.close();
     return users;
 }
-vector<Movie> ReadmMoviesFromFile()
+vector<Movie> ReadMoviesFromFile()
 {
     vector<Movie> movies;
     stringstream ss;
     fstream file("Movies.txt");
     string line;
     string t_name;
-    int t_pin;
+    string t_genre;
+    double t_rating;
     while(getline(file, line))
     {
         ss<<line;
-        ss>>t_name>>t_pin;
-        movies.emplace_back(t_name, t_pin);
+        ss>>t_name>>t_genre>>t_rating;
+        t_name=Spacer(t_name);
+        t_genre=Spacer(t_genre);
+        movies.emplace_back(t_name, t_rating,t_genre);
         ss.clear();
     }
     file.close();
     return movies;
 }
-void WriteMoviesToFile(vector<Movie>&movies)
-{
-    fstream file("Movies.txt",ios::out);
-    string name;
-    int rating;
-    string genre;
-    cout<<"Enter movie name and release date: /n";
-    cin.ignore();
-    getline(cin,name);
-    cout<<"Movie Genre: ";
-    getline(cin,genre);
-    cout<<"Movie Rating: ";
-    cin>>rating;
-    file<<name<<" "<<genre<<" "<<rating<<endl;
-    file.close();
-}
-void MovieRecommend(vector<Movie>& movies,vector<User>&users,int &userno) 
+void MovieRecommend(vector<Movie>& movies,vector<User>&users,int userno) 
 {
     string genre;
     bool foundRecommendations = false;
@@ -206,7 +312,7 @@ void MovieRecommend(vector<Movie>& movies,vector<User>&users,int &userno)
     {
         if (movies[i].getGenre() == genre) 
         {
-            cout << "Name: " << movies[i].getName() << ", Rating: " << movies[i].getRating(i) << endl;
+            cout << "Name: " << movies[i].getName() << ", Rating: " << movies[i].getRating() << endl;
             foundRecommendations = true;
         }
     }
@@ -217,9 +323,5 @@ void MovieRecommend(vector<Movie>& movies,vector<User>&users,int &userno)
 }
 int main()
 {
-    vector<Movie> movies = ReadmMoviesFromFile();
-    for (int i=0;i<movies.size();i++)
-    {
-        cout<<movies[i].getName()<<endl;
-    }
+	
 }
