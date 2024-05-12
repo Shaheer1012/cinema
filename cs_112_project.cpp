@@ -3,6 +3,7 @@
 #include <fstream>
 #include <vector>
 #include <sstream>
+#include<Windows.h>
 using namespace std;
 class User
 {
@@ -26,6 +27,7 @@ class User
         friend ostream &operator <<(ostream &out,User &obj)
         {
             out<<"Username: "<<obj.name<<endl<<"Pin: "<<obj.pin<<endl<<"Preffered Genre: "<<obj.prefferedgenre<<endl;
+            return out;
         }
 };
 class Movie
@@ -33,19 +35,22 @@ class Movie
 	private:
 		string m_name,genre;
         double ratings;
+        int numrates;
         vector<string> comments;
 	public:
         int counter=1;
-		Movie(string m = "",double r = 0,string g = "")
+		Movie(string m = "",double r = 0,string g = "",int numrates=0)
 		{
 			m_name=m;
             ratings=r;
             genre=g;
-
+            this->numrates=numrates;
 		}
+        int getnumrates(){return numrates;}
         double getRating(){return ratings;}
 		string getName(){return m_name;}
         string getGenre(){return genre;}
+        void setnumrates(int r){numrates=r;}
         void setRating(double r){ratings=r;}
 		void setName(string m2){m_name=m2;}
         void setGenre(string g2){genre=g2;}	
@@ -57,7 +62,7 @@ class Movie
         }
         friend ostream &operator <<(ostream &out,Movie&obj)
         {
-            out<<"Name: "<<obj.m_name<<endl<<"Genre: "<<obj.genre<<endl<<"Ratings: "<<setprecision(3)<<obj.ratings<<endl;
+            out<<"Name: "<<obj.m_name<<endl<<"Genre: "<<obj.genre<<endl<<"Ratings: "<<setprecision(3)<<obj.ratings<<"Veiws: "<<obj.numrates<<endl;
             return out;
         }
 };
@@ -115,22 +120,16 @@ vector<vector<string>> ReadCommentsFromFile()
     file.close();
     return comments;
 }
-void addComment(vector<vector<string>>& comments, int movieno) 
+void addComment(vector<vector<string>>& comments, int movieno, vector<User>& users,int userno) 
 {
     string comment;
     cout << "Enter your comment: ";
     getline(cin >>ws,comment);
+    Beep(700,200);
+    comment=users[userno].getName() + ": " + comment;
     comment = Spaceremover(comment);
     comments[movieno-1].push_back(comment);
     WriteCommentsToFile(comments); 
-}
-void displayComments(vector<vector<string>>& comments, vector<Movie>& movies, vector<User>& users, int movieno) 
-{
-    cout << movies[movieno-1] << endl;
-    for (int i = 1; i < comments[movieno-1].size(); i++) 
-    { 
-        cout << "- " << Spacer(comments[movieno-1][i]) << endl; 
-    }
 }
 void DisplayMovies(int movieno,vector<Movie>&movies)
 {
@@ -147,7 +146,7 @@ void WriteMoviesToFile(vector<Movie>& movies)
     ofstream file("Movies.txt");
     for (int i = 0; i < movies.size(); i++) 
     {
-        file << movies[i].getName() << " " << movies[i].getGenre() << " " << movies[i].getRating() << endl;
+        file << Spaceremover(movies[i].getName()) << " " << Spaceremover(movies[i].getGenre()) << " " << movies[i].getRating()<<" "<<movies[i].getnumrates() << endl;
     }
     file.close();
 }
@@ -156,22 +155,26 @@ void WriteUsersToFile(vector<User>& users)
     ofstream file("user.txt");
     for (int i = 0; i < users.size(); i++) 
     {
-        file << users[i].getName() << " " << users[i].getPin() << " " << users[i].getPrefferedgenre() << endl;
+        file << Spaceremover(users[i].getName()) << " " << users[i].getPin() << " " << Spaceremover(users[i].getPrefferedgenre()) << endl;
     }
     file.close();
 }
-void AddRating(int i,vector<Movie>&movies,double rat)
+void AddRating(int movieno, vector<Movie>& movies, double rat)
 {
-    if(rat>4)
+    if (rat > 4 || rat < 1)
     {
-        cout<<"Invalid rating, enter number b/w (1-4)"<<endl;
+        cout << "Invalid rating, enter number between 1 and 4" << endl;
+        Sleep(1000);
         return;
     }
     else
     {
-    double currate=(movies[i-1].getRating()+rat)/movies[i-1].moviecounter(); 
-    movies[i-1].setRating(currate);
-    WriteMoviesToFile(movies);
+        int num = movies[movieno - 1].getnumrates();
+        num++; // Increment the number of rates
+        movies[movieno - 1].setnumrates(num);
+        double currate = ((movies[movieno - 1].getRating() * movies[movieno - 1].getnumrates()) + rat) / (movies[movieno - 1].getnumrates() + 1);
+        movies[movieno - 1].setRating(currate);
+        WriteMoviesToFile(movies);
     }
 }
 void signup(vector<User>&users)
@@ -184,23 +187,26 @@ void signup(vector<User>&users)
     bool userfound=false;
     cout<<"Enter your name: ";
     getline(cin,name);
-    name=Spaceremover(name);
+    Beep(700,200);
     cout<<"Enter your pin: (4 digits): ";
     cin>>pin;
+    Beep(700,200);
     cout<<"Enter your preffered genre: ";
     cin.ignore();
     getline(cin,genre);
-    genre=Spaceremover(genre); 
+    Beep(700,200);
     if(pin>9999||pin<1000)
     {
-        cout<<"Invalid pin, try again";
+        cout<<"Invalid pin, try again"<<endl;
+        Sleep(1000);
         return;
     }
+    cin.ignore();
     for(int i=0;i<users.size();i++)
     {
         if(users[i].getName()==name)
         {
-            cout<<"User already in use,choose another username";
+            cout<<"User already in use,choose another username"<<endl;
             userfound=true;
             return;
         }
@@ -216,6 +222,7 @@ void changePrefferedgenre(vector<User>&users,int &userno)
     string genre;
     cout<<"Enter the genre you prefer to watch"<<endl;
     getline(cin,genre);
+    Beep(700,200);
     users[userno].setPrefferedgenre(genre);
 
 }
@@ -230,17 +237,24 @@ int login(vector<User>&users)
     bool pinmatches=false;
     cout<<"Enter your name: ";
     getline(cin,name);  
+    Beep(700,200);
     for(int i=0;i<users.size();i++)
     {
         if(users[i].getName()==name)
         {
             userfound=true;
             userno=i;
-            cout<<"Enter your pin: ";
+            cout<<"Enter your pin(4-digit): ";
             cin>>pin;
+            Beep(700,200);
             if(users[i].getPin()==pin)
             {
                 pinmatches=true;
+                break;
+            }
+            else
+            {
+                break;
             }
         }
     }  
@@ -252,12 +266,14 @@ int login(vector<User>&users)
     else if(userfound && !pinmatches)
     {
         cout<<"Wrong pin"<<endl;
-        return 0;
+        Sleep(1000);
+        return -1;
     }
     else
     {
-        cout<<"User not found"<<endl;
-        return 0;
+        cout<<"account doesnt exist"<<endl;
+        Sleep(1000);
+        return -1;
     }
 }
 vector<User>ReadUsersFromFile()
@@ -290,13 +306,14 @@ vector<Movie> ReadMoviesFromFile()
     string t_name;
     string t_genre;
     double t_rating;
+    int t_numrates;
     while(getline(file, line))
     {
         ss<<line;
-        ss>>t_name>>t_genre>>t_rating;
+        ss>>t_name>>t_genre>>t_rating>>t_numrates;
         t_name=Spacer(t_name);
         t_genre=Spacer(t_genre);
-        movies.emplace_back(t_name, t_rating,t_genre);
+        movies.emplace_back(t_name, t_rating,t_genre,t_numrates);
         ss.clear();
     }
     file.close();
@@ -304,26 +321,191 @@ vector<Movie> ReadMoviesFromFile()
 }
 void MovieRecommend(vector<Movie>& movies,vector<User>&users,int userno) 
 {
+    Sleep(1);
+    system("CLS");
     string genre;
     bool foundRecommendations = false;
     genre=users[userno].getPrefferedgenre();
-    for (int i=0;i<movies.size();i++) 
+for (int i = 0; i < movies.size(); i++) 
+{
+    if (movies[i].getGenre() == genre) 
     {
-        if (movies[i].getGenre() == genre) 
+        if (i < 9) 
         {
-            cout << "Name: " << movies[i].getName() << ", Rating: " << movies[i].getRating() << endl;
-            foundRecommendations = true;
+            cout << " |  " << setw(22) << left << movies[i].getName().substr(0, 20) << "| "
+                 << setw(7) << fixed << setprecision(2) << movies[i].getRating() << "| "
+                 << setw(9) << movies[i].getGenre() << endl;
         }
+        else if (i < 1000) 
+        {
+            cout << " | " << setw(22) << left << movies[i].getName().substr(0, 20) << " | "
+                 << setw(7) << fixed << setprecision(2) << movies[i].getRating() << " | "
+                 << setw(9) << movies[i].getGenre() << endl;
+        }
+        foundRecommendations = true;
     }
+}
+
     if (!foundRecommendations) 
     {
         cout << "No movies found in the genre \"" << genre << "\"" << endl;
     }
 }
-int main()
+void displayMainMenu() 
+{
+    Sleep(1);
+    system("CLS");
+    cout << "IMTB - Interactive Movie Recommendation System" << endl;
+    cout << "----------------------------------------------" << endl;
+    cout << "1. Login" << endl;
+    cout << "2. Sign Up" << endl;
+    cout << "3. Exit" << endl;
+}
+void displayMovieList(vector<Movie>& movies, const string& username) 
+{
+    Sleep(1);
+    system("CLS");
+    cout << "==============================================" << endl;
+    cout << "Movie List" << endl;
+    cout << "----------------------------------------------" << endl;
+    cout << "No. | Title                 | Rating | Genre" << endl;
+    cout << "----------------------------------------------" << endl;
+    for (size_t i = 0; i < 9; ++i) 
+    {
+        cout  << i+1 << "  | " << setw(22) << left << movies[i].getName().substr(0, 20) << " | "
+             << setw(7) << fixed << setprecision(2) << movies[i].getRating() << " | "
+             << setw(9) << movies[i].getGenre() << endl;
+    }
+    for (size_t i = 9; i < movies.size(); ++i) 
+    {
+        cout  << i+1 << " | " << setw(22) << left << movies[i].getName().substr(0, 20) << " | "
+             << setw(7) << fixed << setprecision(2) << movies[i].getRating() << " | "
+             << setw(9) << movies[i].getGenre() << endl;
+    }
+    cout << "----------------------------------------------" << endl;
+    cout << right << setw(50) << "Logged in as: " << username << endl;
+}
+
+void displayMovieDetails( Movie& movie, vector<string>& comments) 
+{
+    Sleep(1);
+    system("CLS");
+    cout << "IMTB - Movie Details" << endl;
+    cout << "----------------------------------------------" << endl;
+    cout << "Title: " << movie.getName() << endl;
+    cout << "Rating: " << fixed << setprecision(2) << movie.getRating() << endl;
+    cout << "Genre: " << movie.getGenre() << endl;
+    cout << "----------------------------------------------" << endl;
+    cout << "Comments:" << endl;
+    for (const string& comment : comments) 
+    {
+        cout << "- " << Spacer(comment) << endl;
+    }
+    cout << "----------------------------------------------" << endl;
+}
+void addRating(vector<Movie>& movies, int index) 
+{
+    double rating;
+    cout << "Enter your rating for this movie (1-4): ";
+    cin >> rating;
+    Beep(700,200);
+    AddRating(index, movies, rating);
+}
+int main() 
 {
     vector<User> users = ReadUsersFromFile();
     vector<Movie> movies = ReadMoviesFromFile();
     vector<vector<string>>comments=ReadCommentsFromFile();
-    displayComments(comments,movies,users,9); 
+    int currentUser;
+    bool loggedIn = false;
+    int choice;
+
+    while (true) 
+    {
+        displayMainMenu();
+        cout << "Enter your choice (1,2,3): ";
+        cin >> choice;
+        Beep(700,200);
+        if (choice == 1) 
+        {
+            cin.ignore();
+            currentUser = login(users);
+            if (currentUser != -1) 
+            {
+                loggedIn = true;
+                cout << "Logged in successfully!" << endl;
+                Sleep(1000);
+            } 
+            else 
+            {
+                Sleep(1000);
+            }
+        } 
+        else if (choice == 2) 
+        {
+            cin.ignore();
+            signup(users);
+        } 
+        else if (choice == 3) 
+        {
+            cout << "Thank you for using our system. Goodbye!" << endl;
+            return 0;
+        } 
+        else 
+        {
+            cout << "Invalid choice! Please try again." << endl;
+            Sleep(1000);
+        }
+        if (loggedIn) 
+        {
+            while (true) 
+            {
+                string username=users[currentUser].getName();
+                displayMovieList(movies,username);
+                cout << "Enter the index of the movie you would like to watch (0 to return to main menu): ";
+                cin >> choice;
+                Beep(700,200);
+                if (choice == 0) 
+                {
+                    break;
+                } 
+                else if (choice < 1 || choice > static_cast<int>(movies.size())) 
+                {
+                    cout << "Invalid movie index! Please try again." << endl;
+                    Sleep(1000);
+                } 
+                else 
+                {
+                    displayMovieDetails(movies[choice - 1], ReadCommentsFromFile()[choice - 1]);
+                    cout << "Would you like to rate this movie? (y/n): ";
+                    char ratechoice;
+                    cin>>ratechoice;
+                    Beep(700,200);
+                    if (ratechoice == 'y' || ratechoice == 'Y')
+                    {
+                        addRating(movies, choice);
+                    }
+                    cout << "Would you like to add a comment for this movie? (y/n): ";
+                    char addCommentChoice;
+                    cin >> addCommentChoice;
+                    Beep(700,200);
+                    if (addCommentChoice == 'y' || addCommentChoice == 'Y') 
+                    {
+                        addComment(comments, choice, users, currentUser);
+                    }
+                    cout << "Would you like movie recommendations based on your preferred genre? (y/n): ";
+                    char recommendationChoice;
+                    cin >> recommendationChoice;
+                    Beep(700,200);
+                    if (recommendationChoice == 'y' || recommendationChoice == 'Y') 
+                    {
+                        MovieRecommend(movies, users, currentUser);
+                    }
+                    cout << "Press Enter to continue...";
+                    cin.ignore();
+                    cin.get();
+                }
+            }
+        }
+    }
 }
